@@ -1,0 +1,9 @@
+{
+  "logs_directory": "/opt/zeek/logs",
+  "database_path": "/var/lib/grafana/data/zeek_logs.db",
+  "log_file": "/var/log/zeek-to-sqlite.log",
+  "log_level": "INFO",
+  "days_back": null,
+  "cron_interval_hours": 6
+}
+
