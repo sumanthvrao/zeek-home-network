@@ -18,12 +18,18 @@ This project processes Zeek network monitoring logs from date-based directories 
 
 2. Run the setup script (creates directories and sets permissions):
    ```bash
+   chmod +x setup.sh fix-permissions.sh
    ./setup.sh
+   ```
+   
+   If you encounter permission issues later, run:
+   ```bash
+   ./fix-permissions.sh
    ```
    
    Or manually:
    ```bash
-   chmod +x zeek-to-sqlite.py zeek-to-sqlite-cron.sh setup.sh
+   chmod +x zeek-to-sqlite.py zeek-to-sqlite-cron.sh setup.sh fix-permissions.sh
    sudo mkdir -p /var/log /var/lib/grafana/data
    sudo chown $USER:$USER /var/log /var/lib/grafana/data
    ```
@@ -150,12 +156,47 @@ A special `_processed_files` table tracks which files have been imported.
 ## Troubleshooting
 
 ### Permission Issues
-```bash
-# Ensure you have read access to Zeek logs
-ls -la /opt/zeek/logs
 
-# Ensure you have write access to database directory
+If you get permission errors when creating the database:
+
+**Option 1: Change ownership of the directory (Recommended)**
+```bash
+# Check current ownership
+ls -ld /var/lib/grafana/data
+
+# Change ownership to your user (replace 'youruser' with your username)
+sudo chown youruser:youruser /var/lib/grafana/data
+
+# Or if Grafana needs access, use a group:
+sudo chown youruser:grafana /var/lib/grafana/data
+sudo chmod 775 /var/lib/grafana/data
+```
+
+**Option 2: Add your user to the grafana group**
+```bash
+# Add your user to grafana group
+sudo usermod -a -G grafana $USER
+
+# Log out and back in for group changes to take effect
+# Then set group permissions
+sudo chmod 775 /var/lib/grafana/data
+```
+
+**Option 3: Use a different location (if you can't modify Grafana's directory)**
+Edit `config.json` and change `database_path` to a location you own:
+```json
+{
+  "database_path": "/home/youruser/zeek_logs.db"
+}
+```
+
+**Verify permissions:**
+```bash
+# Test write access
 touch /var/lib/grafana/data/zeek_logs.db
+
+# Check Zeek logs access
+ls -la /opt/zeek/logs
 ```
 
 ### Check Logs

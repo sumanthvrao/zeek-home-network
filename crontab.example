@@ -20,8 +20,7 @@
 #   chmod +x /path/to/zeek-home-network/zeek-to-sqlite-cron.sh
 
 # Run every 6 hours at the top of the hour (00:00, 06:00, 12:00, 18:00)
-# IMPORTANT: Replace /path/to/zeek-home-network with the actual path where you cloned the repo
-0 */6 * * * /home/pi/zeek-home-network/zeek-to-sqlite-cron.sh
+0 */6 * * * /path/to/zeek-home-network/zeek-to-sqlite-cron.sh
 
 # Alternative: Run every 6 hours at specific times (02:00, 08:00, 14:00, 20:00)
 # 0 2,8,14,20 * * * /path/to/zeek-home-network/zeek-to-sqlite-cron.sh

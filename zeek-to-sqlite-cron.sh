@@ -7,12 +7,28 @@
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.json"
-LOCK_FILE="/var/run/zeek-to-sqlite.lock"
-LOG_FILE="/var/log/zeek-to-sqlite-cron.log"
+
+# Use user-writable location for lock file
+# Try /tmp first, fallback to user's home directory
+if [ -w "/tmp" ]; then
+    LOCK_FILE="/tmp/zeek-to-sqlite-${USER}.lock"
+else
+    LOCK_FILE="${HOME}/.zeek-to-sqlite.lock"
+fi
+
+# Use user-writable location for cron log if /var/log is not writable
+if [ -w "/var/log" ]; then
+    LOG_FILE="/var/log/zeek-to-sqlite-cron.log"
+else
+    LOG_FILE="${HOME}/zeek-to-sqlite-cron.log"
+fi
 
 # Function to log messages
 log_message() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "$msg"
+    # Try to append to log file, but don't fail if we can't
+    echo "$msg" >> "$LOG_FILE" 2>/dev/null || true
 }
 
 # Function to cleanup on exit
@@ -39,8 +55,15 @@ if [ -f "$LOCK_FILE" ]; then
 fi
 
 # Create lock file
-echo $$ > "$LOCK_FILE"
-log_message "Starting zeek-to-sqlite processing (PID: $$)"
+if ! echo $$ > "$LOCK_FILE" 2>/dev/null; then
+    # If we can't write to the intended location, try home directory
+    LOCK_FILE="${HOME}/.zeek-to-sqlite.lock"
+    echo $$ > "$LOCK_FILE" || {
+        log_message "ERROR: Cannot create lock file. Check permissions."
+        exit 1
+    }
+fi
+log_message "Starting zeek-to-sqlite processing (PID: $$, Lock: $LOCK_FILE)"
 
 # Check if config file exists
 if [ ! -f "$CONFIG_FILE" ]; then
