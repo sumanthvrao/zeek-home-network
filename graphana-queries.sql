@@ -62,6 +62,74 @@ GROUP BY query
 ORDER BY count DESC
 LIMIT 30
 
+-- DNS queries over time (Time Series)
+-- Shows DNS query frequency over time, grouped by query
+-- Creates one line per DNS query showing when queries occur
+-- Adjust interval: 60 = 1 minute, 300 = 5 minutes, 900 = 15 minutes
+-- In Grafana: Format as "Time series" - will automatically create one line per query
+-- Title: DNS queries over time
+-- Note: This query shows top queries. Remove the subquery LIMIT to show all unique queries
+
+SELECT 
+  (ROUND(ts / 60) * 60) AS time,
+  query AS metric,
+  COUNT(*) AS value
+FROM 
+  dns
+WHERE 
+  ts >= $__from / 1000 AND 
+  ts < $__to / 1000 AND
+  query IN (
+    SELECT query 
+    FROM dns 
+    WHERE ts >= $__from / 1000 AND ts < $__to / 1000
+    GROUP BY query 
+    ORDER BY COUNT(*) DESC 
+    LIMIT 20
+  )
+GROUP BY 
+  time, query
+ORDER BY 
+  time ASC;
+
+-- All unique DNS queries with counts
+-- Shows all unique DNS queries in the time range with their total counts
+-- In Grafana: Format as "Table" for a detailed list view
+-- Title: All unique DNS queries
+
+SELECT 
+  query,
+  COUNT(*) AS total_count,
+  MIN(ts) AS first_seen,
+  MAX(ts) AS last_seen
+FROM 
+  dns
+WHERE 
+  ts >= $__from / 1000 AND 
+  ts < $__to / 1000
+GROUP BY 
+  query
+ORDER BY 
+  total_count DESC;
+
+-- DNS query volume over time (aggregated)
+-- Shows total DNS query volume over time intervals
+-- In Grafana: Format as "Time series" for a single line chart
+-- Title: Total DNS queries over time
+
+SELECT 
+  (ROUND(ts / 60) * 60) AS time,
+  COUNT(*) AS value
+FROM 
+  dns
+WHERE 
+  ts >= $__from / 1000 AND 
+  ts < $__to / 1000
+GROUP BY 
+  time
+ORDER BY 
+  time ASC;
+
 -- Bytes trasferred between hosts
 -- Title: Bytes Transferred / Host
 
